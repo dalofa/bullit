@@ -136,9 +136,35 @@ def finish(config_file,board_name,task_id):
                       index=False,
                       sep="\t")
 
-finish("/home/dalofa/dev/bullit/.bullit_config.yaml",
-       "example",
-       1)
+def remove(config_file,board_name,task_id):
+    """Update the stauts of a task to done"""
+    board_data = pd.read_csv(get_board_path(config_file,board_name), 
+                             sep="\t",
+                             dtype={0: str},
+                             header=0)
+    
+    # Set dataframe to everything except specified ID
+    board_data = board_data[board_data["ID"]!=task_id]
+
+    board_data.to_csv(get_board_path(config_file,board_name),
+                      index=False,
+                      sep="\t")
+
+def clean_board(config_file,board_name):
+    """Removes all tasks marked as done"""
+    board_data = pd.read_csv(get_board_path(config_file,board_name), 
+                            sep="\t",
+                            dtype={0: str},
+                            header=0)
+    
+    for task in board_data.iterrows():
+        task_id = task[1].iloc[3]
+        task_done = task[1].iloc[4]
+
+        if task_done:
+            remove(config_file,board_name,task_id)
+
+clean_board("/home/dalofa/dev/bullit/.bullit_config.yaml","example")
 
 def overview():
     
