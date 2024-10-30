@@ -79,7 +79,7 @@ def get_board_path(config_file,board_name):
     # if no board with the name exists
     print(f"Board {board_name} doest not exist.")
     
-def view(config_file,board_name):
+def view_board(config_file,board_name):
     """Prints a task-board"""
     board_data = pd.read_csv(get_board_path(config_file,board_name), 
                              sep="\t",
@@ -112,17 +112,23 @@ def view(config_file,board_name):
             print(f"\033[9m{mes_format}\033[0m")
         else:
             print(mes_format)
-view("/home/dalofa/dev/bullit/.bullit_config.yaml","example")
 
-def add(task_type,task_desc,board_name,task_date="NA"):
+def add_task(config_file,board_name, task_desc, task_type="•",task_date="NA"):
     """Adds a task to a task-board"""
-    board_data = pd.read_csv(".boards/" + board_name+".data")
+    board_data = pd.read_csv(get_board_path(config_file,board_name), 
+                             sep="\t",
+                             dtype={0: str},
+                             header=0)
+    
     new_id = board_data.ID.max()+1
-    new_data = [task_type,task_desc,task_date,new_id]
+    task_done=False
+    new_data = [task_type,task_desc,task_date,new_id,task_done]
     board_data.loc[len(board_data)] = new_data
-    board_data.to_csv(".boards/" + board_name+".data",index=False)
+    board_data.to_csv(get_board_path(config_file,board_name),
+                      index=False,
+                      sep="\t")
 
-def finish(config_file,board_name,task_id):
+def finish_task(config_file,board_name,task_id):
     """Update the stauts of a task to done"""
     board_data = pd.read_csv(get_board_path(config_file,board_name), 
                              sep="\t",
@@ -136,8 +142,9 @@ def finish(config_file,board_name,task_id):
                       index=False,
                       sep="\t")
 
-def remove(config_file,board_name,task_id):
-    """Update the stauts of a task to done"""
+
+def remove_task(config_file,board_name,task_id):
+    """Remove a task from a task board"""
     board_data = pd.read_csv(get_board_path(config_file,board_name), 
                              sep="\t",
                              dtype={0: str},
@@ -163,8 +170,6 @@ def clean_board(config_file,board_name):
 
         if task_done:
             remove(config_file,board_name,task_id)
-
-clean_board("/home/dalofa/dev/bullit/.bullit_config.yaml","example")
 
 def overview():
     
