@@ -1,11 +1,61 @@
 """View the current log"""
 import pandas as pd
 import os
+import yaml
+from datetime import datetime
 
-def create(board_name):
-    """Creates a data file to store to-do board"""
-    board_data = pd.DataFrame(columns=["type","task","date","ID"])
-    board_data.to_csv(".boards/" + board_name+".data",index=False)
+def board_found(board_name,config_object):
+    """Checks if a board exists in a config object"""
+    # check that a config object is given
+    assert type(config_object)==dict, "config_object is not a yaml-derived dict()"
+
+    # iterate through board meta-data
+    for board in config_object["boards"]:
+            if board["name"]==board_name:
+                return True
+    return False
+
+
+def create_board(board_name,config_file,tags=["default"]):
+    """Create an empty data file for a task-board and adds it to the config file"""
+    with open(config_file,"r") as file:
+        config=yaml.safe_load(file)
+    
+    if board_found(board_name,config):
+        print(f"{board_name} already exists")
+    else:
+        # Create metadata for board
+        c_date = datetime.now()
+        c_date_iso = c_date.date().isoformat() #ISO8601-format
+        board_dir = config.get("board_dir")
+        data_path = os.path.join(board_dir,board_name + ".data")
+
+        board_info = {
+            "name": board_name,
+            "created": c_date_iso,
+            "tags": tags,
+            "data_file": data_path}
+        
+        # Write to config file
+        config["boards"].append(board_info)
+
+        with open(config_file, "w") as file:
+            yaml.dump(config, file, default_flow_style=False, sort_keys=False)
+        
+        # create data file
+        board_data = pd.DataFrame(columns=["type","task","date","ID","done"])
+        board_data.to_csv(data_path,index=False)
+
+create_board("example","/home/dalofa/dev/bullit/.bullit_config.yaml",tags=["example"])
+
+def set_current_board(config_file):
+    """Specifies the current  """
+    # Load the YAML configuration
+    with open(".bullit_config.yaml", "r") as file:
+        config = yaml.safe_load(file)
+
+        #Access the current board
+        current_board = config.get("current_board")
 
 def view(board_name):
     """Views a task-board"""
