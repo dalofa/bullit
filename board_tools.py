@@ -85,10 +85,12 @@ def view(config_file,board_name):
                              sep="\t",
                              dtype={0: str},
                              header=0)
-
-    print("--------",board_name.upper(),"--------")
     columns, rows = os.get_terminal_size() # find terminal size
     task_print_size = int(columns/2)
+    l_header = (task_print_size-len(board_name.upper()))/2
+    r_header = task_print_size - int(l_header)
+    board_header = "-" * int(l_header) + board_name.upper() + "-" * int(r_header)
+    print(board_header)
     # Define column widths for alignment
     type_width = 1
     date_width = 12
@@ -110,9 +112,7 @@ def view(config_file,board_name):
             print(f"\033[9m{mes_format}\033[0m")
         else:
             print(mes_format)
-        
-        print(mes_format)
-
+view("/home/dalofa/dev/bullit/.bullit_config.yaml","example")
 
 def add(task_type,task_desc,board_name,task_date="NA"):
     """Adds a task to a task-board"""
