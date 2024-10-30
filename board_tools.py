@@ -4,7 +4,7 @@ import os
 import yaml
 from datetime import datetime
 
-def board_found(board_name,config_object):
+def board_found(config_object,board_name,):
     """Checks if a board exists in a config object"""
     # check that a config object is given
     assert type(config_object)==dict, "config_object is not a yaml-derived dict()"
@@ -15,13 +15,12 @@ def board_found(board_name,config_object):
                 return True
     return False
 
-
-def create_board(board_name,config_file,tags=["default"]):
+def create_board(config_file,board_name,tags=["default"]):
     """Create an empty data file for a task-board and adds it to the config file"""
     with open(config_file,"r") as file:
         config=yaml.safe_load(file)
-    
-    if board_found(board_name,config):
+
+    if board_found(config,board_name):
         print(f"{board_name} already exists")
     else:
         # Create metadata for board
@@ -44,40 +43,76 @@ def create_board(board_name,config_file,tags=["default"]):
         
         # create data file
         board_data = pd.DataFrame(columns=["type","task","date","ID","done"])
-        board_data.to_csv(data_path,index=False)
+        board_data.to_csv(data_path,index=False,sep="\t")
 
-create_board("example","/home/dalofa/dev/bullit/.bullit_config.yaml",tags=["example"])
+def get_current_board(config_file):
+    """Returns the current board in a .yaml file"""
+    with open(config_file, "r") as file:
+        config = yaml.safe_load(file)
+    current_board = config.get("current_board")
+    return current_board
 
-def set_current_board(config_file):
-    """Specifies the current  """
-    # Load the YAML configuration
-    with open(".bullit_config.yaml", "r") as file:
+def set_current_board(config_file,board_name):
+    """Sets the current board in a .yaml file"""
+    with open("config_file", "r") as file:
         config = yaml.safe_load(file)
 
-        #Access the current board
-        current_board = config.get("current_board")
+    # Confirm that the board exits before setting it as current
+    if board_found(config,board_name,):
 
-def view(board_name):
-    """Views a task-board"""
-    board_data = pd.read_csv(".boards/" + board_name+".data",sep=",")
-    print("--------",board_name,"--------")
+        # update current board and write to file
+        config["current_board"]=board_name
+        with open(config_file, "w") as file:
+            yaml.dump(config, file, default_flow_style=False, sort_keys=False)
+    else:
+        print(f"Board {board_name} does not exist")
 
+def get_board_path(config_file,board_name):
+    """Returns the path to a boards data file from a .yaml file"""
+    with open(config_file, "r") as file:
+        config = yaml.safe_load(file)
+
+    for board in config["boards"]:
+        if board["name"]==board_name:
+            return(board["data_file"])
+    
+    # if no board with the name exists
+    print(f"Board {board_name} doest not exist.")
+    
+def view(config_file,board_name):
+    """Prints a task-board"""
+    board_data = pd.read_csv(get_board_path(config_file,board_name), 
+                             sep="\t",
+                             dtype={0: str},
+                             header=0)
+
+    print("--------",board_name.upper(),"--------")
+    columns, rows = os.get_terminal_size() # find terminal size
+    task_print_size = int(columns/2)
     # Define column widths for alignment
     type_width = 1
-    desc_width = 50
     date_width = 12
     id_width = 5
+    desc_width = int(task_print_size)-id_width-date_width-type_width
 
     for task in board_data.iterrows():
         task_type = task[1].iloc[0]
         task_desc = task[1].iloc[1]
         task_date = task[1].iloc[2]
         task_id = task[1].iloc[3]
-
+        task_done = bool(task[1].iloc[4])
         if len(task_desc) > desc_width:
             task_desc = task_desc[:desc_width - 3] + "..."
         mes_format = f"{task_type:<{type_width}} {task_desc:<{desc_width}} {str(task_date):<{date_width}} {str(task_id):<{id_width}}"
+        
+        # strikethrough a finished task
+        if task_done:
+            print(f"\033[9m{mes_format}\033[0m")
+        else:
+            print(mes_format)
+        
         print(mes_format)
+
 
 def add(task_type,task_desc,board_name,task_date="NA"):
     """Adds a task to a task-board"""
@@ -94,14 +129,18 @@ def finish(board_name,task_id):
     board_data.to_csv(".boards/" + board_name+".data",index=False)
 
 def overview():
+    
     """Displays all task boards side by side with board names and hyphen separators"""
     
     board_dir = ".boards/"
     board_files = [f for f in os.listdir(board_dir) if f.endswith(".data")]
     
     # Define column widths for alignment
+    columns, rows = os.get_terminal_size()
+    task_print_size = int(columns/2)
+    
     type_width = 1
-    desc_width = 20
+    desc_width = int(task_print_size/3)
     date_width = 5
     id_width = 2
     column_total_width = type_width + desc_width + date_width + id_width + 3  # 3 for spacing between fields
@@ -146,3 +185,7 @@ def overview():
         
         # Print all boards' tasks in the same row
         print("   ".join(row_outputs))
+
+
+
+

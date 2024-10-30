@@ -1,0 +1,8 @@
+board_dir: /home/user/dev/bullit/.boards
+current_board: example
+boards:
+- name: example
+  created: '2024-10-30'
+  tags:
+  - default
+  data_file: /home/user/dev/bullit/.boards/example.data
