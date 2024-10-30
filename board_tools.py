@@ -122,11 +122,23 @@ def add(task_type,task_desc,board_name,task_date="NA"):
     board_data.loc[len(board_data)] = new_data
     board_data.to_csv(".boards/" + board_name+".data",index=False)
 
-def finish(board_name,task_id):
-    """Finish and remove a task from a task board"""
-    board_data = pd.read_csv(".boards/" + board_name+".data")
-    board_data = board_data[board_data["ID"]!=task_id] # remove ID
-    board_data.to_csv(".boards/" + board_name+".data",index=False)
+def finish(config_file,board_name,task_id):
+    """Update the stauts of a task to done"""
+    board_data = pd.read_csv(get_board_path(config_file,board_name), 
+                             sep="\t",
+                             dtype={0: str},
+                             header=0)
+    
+    # Update board using .loc[row_indexer,col_indexer]=value
+    board_data.loc[board_data["ID"]==task_id,"done"]=True
+
+    board_data.to_csv(get_board_path(config_file,board_name),
+                      index=False,
+                      sep="\t")
+
+finish("/home/dalofa/dev/bullit/.bullit_config.yaml",
+       "example",
+       1)
 
 def overview():
     
